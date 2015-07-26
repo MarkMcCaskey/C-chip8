@@ -32,10 +32,11 @@ struct state{
 	uint16_t stack[16];
 	uint8_t sp;
 	uint64_t display[32];
+	uint8_t st, dt;
 };
 
 struct state state =
-{0x200, {}, {}, 0, {}, 0, {}};
+{0x200, {}, {}, 0, {}, 0, {}, 0, 0};
 
 int main( int argc, char* argv[] )
 {
@@ -179,26 +180,38 @@ void run_instruction( uint16_t ins )
 	case 0xE:
 		if( GET_SECOND_BYTE(ins) == 0x9E )
 		{
+			if( 0/* VX(ins) == keypresseddown*/)
+				state.pc += 2;
 		} else if( GET_SECOND_BYTE(ins) == 0xA1 )
 		{
+			if( 0 /* ! VX(ins) == keypresseddown*/)
+				state.pc += 2;
 		}
 		break;
 	case 0xF:
 		switch( GET_SECOND_BYTE(ins) )
 		{
 		case 0x07:
+			VX(ins) = state.dt;
 			break;
 		case 0x0A:
+			//wait for key press
+			VX(ins) = 0/*key pressed down*/;
 			break;
 		case 0x15:
+			state.dt = VX(ins);
 			break;
 		case 0x18:
+			state.st = VX(ins);
 			break;
 		case 0x1E:
+			state.I += VX(ins);
 			break;
 		case 0x29:
+			//
 			break;
 		case 0x33:
+			//
 			break;
 		case 0x55:
 			for( i = 0; i < 16; ++i )
@@ -207,6 +220,10 @@ void run_instruction( uint16_t ins )
 			}
 			break;
 		case 0x65:
+			for( i =0; i < 16; ++i )
+			{
+				V(i) = state.mem[(state.I + i)];
+			}
 			break;
 		}
 		break;
