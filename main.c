@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
+#include <math.h>
 
 #define FIRST(x) (((x) >> 12) & 0xF)
 #define SECOND(x) (((x) >> 8) & 0xF)
@@ -20,7 +22,8 @@
 #define DS(x,y,v) (state.display[((y) % 32)] ^= ((v) << ((x) % 8)))
 
 int main( int, char** );
-void run_instruction( uint16_t );
+int run_instruction( uint16_t );
+void load_font( void );
 
 
 struct state{
@@ -40,11 +43,18 @@ struct state state =
 
 int main( int argc, char* argv[] )
 {
-	srandom(3);
+	srandom(time(NULL));
+	load_font();
+
+	while( 0 )
+	{
+		
+	}
+
 	exit( EXIT_SUCCESS );
 }
 
-void run_instruction( uint16_t ins )
+int run_instruction( uint16_t ins )
 {
 	//variables for 0xD instructions
 	int yo,xo,d,m;
@@ -208,10 +218,13 @@ void run_instruction( uint16_t ins )
 			state.I += VX(ins);
 			break;
 		case 0x29:
-			//
+			//set I to location of letter corresponding to VX
+			state.I = VX(ins) * 5;
 			break;
 		case 0x33:
-			//
+			//BCD of VX at I
+			for( i = 0; i < 2; ++i )
+				state.mem[state.I + (2 - i)] = (VX(ins) / pow(10,i)) % 10;
 			break;
 		case 0x55:
 			for( i = 0; i < 16; ++i )
@@ -226,8 +239,37 @@ void run_instruction( uint16_t ins )
 			}
 			break;
 		}
+	default:
+		return 1;
 		break;
 		
 	}
+	return 0;
 
+}
+
+void load_font( void )
+{
+	int i,j;
+	const uint8_t fd[16][5] = { {0xF0,0x90,0x90,0x90,0xF0},
+				    {0x20,0x60,0x20,0x20,0x70},
+				    {0xF0,0x10,0xF0,0x80,0xF0},
+				    {0xF0,0x10,0xF0,0x10,0xF0},
+				    {0x90,0x90,0xF0,0x10,0x10},
+				    {0xF0,0x80,0xF0,0x10,0xF0},
+				    {0xF0,0x80,0xF0,0x90,0xF0},
+				    {0xF0,0x10,0x20,0x40,0x40},
+				    {0xF0,0x90,0xF0,0x90,0xF0},
+				    {0xF0,0x90,0xF0,0x10,0xF0},
+				    {0xF0,0x90,0xF0,0x90,0x90},
+				    {0xE0,0x90,0xE0,0x90,0xE0},
+				    {0xF0,0x80,0x80,0x80,0xF0},
+				    {0xE0,0x90,0x90,0x90,0xE0},
+				    {0xF0,0x80,0xF0,0x80,0xF0},
+				    {0xF0,0x80,0xF0,0x80,0x80} };
+	for( i = 0; i < 16; ++i )
+		for( j = 0; j < 5; ++j )
+		{
+			state.mem[(i*5)+j] = fd[i][j];
+		}
 }
